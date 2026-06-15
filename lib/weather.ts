@@ -1,102 +1,111 @@
 import type { WeatherPayload, WeatherPoint, WeatherSearchInput } from "@/lib/types";
 import { getIconUrl } from "@/lib/weather-icons";
 
-const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1";
+const OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5";
 
-type WeatherApiCondition = {
-  text: string;
-  icon: string;
-};
-
-type WeatherApiForecastDay = {
-  date: string;
-  date_epoch: number;
-  day: {
-    avgtemp_c: number;
-    mintemp_c: number;
-    maxtemp_c: number;
-    avghumidity: number;
-    maxwind_kph: number;
-    condition: WeatherApiCondition;
+type OpenWeatherForecastItem = {
+  dt: number;
+  main: {
+    temp: number;
+    temp_min: number;
+    temp_max: number;
+    humidity: number;
   };
+  weather: Array<{
+    description: string;
+    icon: string;
+  }>;
+  wind: {
+    speed: number;
+  };
+  dt_txt: string;
 };
 
-type WeatherApiForecastResponse = {
-  location: {
-    name: string;
-    region: string;
-    country: string;
+type OpenWeatherResponse = {
+  name: string;
+  coord: {
     lat: number;
     lon: number;
-    localtime: string;
   };
-  current: {
-    last_updated_epoch: number;
-    temp_c: number;
+  main: {
+    temp: number;
+    temp_min: number;
+    temp_max: number;
     humidity: number;
-    wind_kph: number;
-    condition: WeatherApiCondition;
   };
-  forecast: {
-    forecastday: WeatherApiForecastDay[];
+  weather: Array<{
+    description: string;
+    icon: string;
+  }>;
+  wind: {
+    speed: number;
   };
+  dt: number;
+  sys?: {
+    country?: string;
+  };
+};
+
+type OpenWeatherForecastResponse = {
+  list: OpenWeatherForecastItem[];
 };
 
 export { getIconUrl };
 
 export async function fetchWeather(input: WeatherSearchInput): Promise<WeatherPayload> {
-  const apiKey = process.env.WEATHERAPI_API_KEY ?? process.env.OPENWEATHER_API_KEY;
+  const apiKey = process.env.OPENWEATHER_API_KEY;
 
   if (!apiKey) {
-    throw new Error("WeatherAPI.com API key is not configured.");
+    throw new Error("OpenWeatherMap API key is not configured.");
   }
 
-  const params = new URLSearchParams({
-    key: apiKey,
-    q: buildWeatherQuery(input),
-    days: "5",
-    aqi: "no",
-    alerts: "no"
-  });
+  const query = buildWeatherQuery(input);
+  const currentUrl = `${OPENWEATHER_BASE_URL}/weather?${query}&appid=${apiKey}&units=metric`;
+  const forecastUrl = `${OPENWEATHER_BASE_URL}/forecast?${query}&appid=${apiKey}&units=metric`;
 
-  const response = await fetch(`${WEATHERAPI_BASE_URL}/forecast.json?${params}`, {
-    cache: "no-store"
-  });
+  const [currentResponse, forecastResponse] = await Promise.all([
+    fetch(currentUrl, { cache: "no-store" }),
+    fetch(forecastUrl, { cache: "no-store" })
+  ]);
 
-  if (!response.ok) {
-    throw new Error(await weatherErrorMessage(response));
+  if (!currentResponse.ok) {
+    throw new Error(await weatherErrorMessage(currentResponse));
   }
 
-  const weather = (await response.json()) as WeatherApiForecastResponse;
-  const fiveDayForecast = weather.forecast.forecastday.slice(0, 5).map(mapForecastWeather);
+  if (!forecastResponse.ok) {
+    throw new Error(await weatherErrorMessage(forecastResponse));
+  }
+
+  const current = (await currentResponse.json()) as OpenWeatherResponse;
+  const forecast = (await forecastResponse.json()) as OpenWeatherForecastResponse;
+  const fiveDayForecast = pickFiveDayForecast(forecast.list);
   const dateRange = validateDateRange(input, fiveDayForecast);
 
   return {
-    location: [weather.location.name, weather.location.region, weather.location.country]
-      .filter(Boolean)
-      .join(", "),
-    coordinates: {
-      lat: weather.location.lat,
-      lon: weather.location.lon
-    },
+    location: [current.name, current.sys?.country].filter(Boolean).join(", "),
+    coordinates: current.coord,
     dateRange,
-    current: mapCurrentWeather(weather),
+    current: mapCurrentWeather(current),
     forecast: fiveDayForecast,
     rangeForecast: filterForecastByDateRange(fiveDayForecast, dateRange),
     raw: {
-      current: weather.current,
-      forecast: weather.forecast
+      current,
+      forecast
     }
   };
 }
 
 function buildWeatherQuery(input: WeatherSearchInput) {
+  const params = new URLSearchParams();
+
   if (input.mode === "city") {
     if (!input.city?.trim()) {
       throw new Error("Please enter a city name.");
     }
 
-    return [input.city.trim(), input.country?.trim()].filter(Boolean).join(",");
+    const cityQuery = [input.city.trim(), input.country?.trim()].filter(Boolean).join(",");
+    params.set("q", cityQuery);
+    return params.toString();
   }
 
   if (input.mode === "zip") {
@@ -104,7 +113,9 @@ function buildWeatherQuery(input: WeatherSearchInput) {
       throw new Error("Please enter a postal code.");
     }
 
-    return [input.zip.trim(), input.country?.trim()].filter(Boolean).join(",");
+    const zipQuery = [input.zip.trim(), input.country?.trim()].filter(Boolean).join(",");
+    params.set("zip", zipQuery);
+    return params.toString();
   }
 
   const lat = Number(input.lat);
@@ -114,35 +125,50 @@ function buildWeatherQuery(input: WeatherSearchInput) {
     throw new Error("Please enter valid GPS coordinates.");
   }
 
-  return `${lat},${lon}`;
+  params.set("lat", String(lat));
+  params.set("lon", String(lon));
+  return params.toString();
 }
 
-function mapCurrentWeather(weather: WeatherApiForecastResponse): WeatherPoint {
-  const today = weather.forecast.forecastday[0]?.day;
-
+function mapCurrentWeather(weather: OpenWeatherResponse): WeatherPoint {
   return {
-    date: new Date(weather.current.last_updated_epoch * 1000).toISOString(),
-    temp: Math.round(weather.current.temp_c),
-    tempMin: Math.round(today?.mintemp_c ?? weather.current.temp_c),
-    tempMax: Math.round(today?.maxtemp_c ?? weather.current.temp_c),
-    description: weather.current.condition.text || "Unknown",
-    icon: weather.current.condition.icon,
-    humidity: weather.current.humidity,
-    windSpeed: kphToMps(weather.current.wind_kph)
+    date: new Date(weather.dt * 1000).toISOString(),
+    temp: Math.round(weather.main.temp),
+    tempMin: Math.round(weather.main.temp_min),
+    tempMax: Math.round(weather.main.temp_max),
+    description: titleCase(weather.weather[0]?.description ?? "Unknown"),
+    icon: weather.weather[0]?.icon ?? "01d",
+    humidity: weather.main.humidity,
+    windSpeed: weather.wind.speed
   };
 }
 
-function mapForecastWeather(item: WeatherApiForecastDay): WeatherPoint {
+function mapForecastWeather(item: OpenWeatherForecastItem): WeatherPoint {
   return {
-    date: new Date(item.date_epoch * 1000).toISOString(),
-    temp: Math.round(item.day.avgtemp_c),
-    tempMin: Math.round(item.day.mintemp_c),
-    tempMax: Math.round(item.day.maxtemp_c),
-    description: item.day.condition.text || "Unknown",
-    icon: item.day.condition.icon,
-    humidity: Math.round(item.day.avghumidity),
-    windSpeed: kphToMps(item.day.maxwind_kph)
+    date: new Date(item.dt * 1000).toISOString(),
+    temp: Math.round(item.main.temp),
+    tempMin: Math.round(item.main.temp_min),
+    tempMax: Math.round(item.main.temp_max),
+    description: titleCase(item.weather[0]?.description ?? "Unknown"),
+    icon: item.weather[0]?.icon ?? "01d",
+    humidity: item.main.humidity,
+    windSpeed: item.wind.speed
   };
+}
+
+function pickFiveDayForecast(items: OpenWeatherForecastItem[]) {
+  const byDate = new Map<string, OpenWeatherForecastItem>();
+
+  for (const item of items) {
+    const dateKey = item.dt_txt.split(" ")[0];
+    const hour = item.dt_txt.split(" ")[1];
+
+    if (hour === "12:00:00" || !byDate.has(dateKey)) {
+      byDate.set(dateKey, item);
+    }
+  }
+
+  return Array.from(byDate.values()).slice(0, 5).map(mapForecastWeather);
 }
 
 function validateDateRange(input: WeatherSearchInput, forecast: WeatherPoint[]) {
@@ -223,13 +249,13 @@ function formatDateOnly(date: Date) {
 
 async function weatherErrorMessage(response: Response) {
   try {
-    const body = (await response.json()) as { error?: { message?: string }; message?: string };
-    return body.error?.message ?? body.message ?? "Weather API request failed.";
+    const body = (await response.json()) as { message?: string };
+    return body.message ? `Weather API error: ${body.message}` : "Weather API request failed.";
   } catch {
     return "Weather API request failed.";
   }
 }
 
-function kphToMps(value: number) {
-  return Number((value / 3.6).toFixed(1));
+function titleCase(value: string) {
+  return value.replace(/\w\S*/g, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase());
 }

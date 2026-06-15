@@ -1,6 +1,6 @@
 # MZ Weather
 
-A responsive weather query web app built with Next.js, Supabase, and WeatherAPI.com.
+A responsive weather query web app built with Next.js, Supabase, and OpenWeatherMap.
 
 Completed scope: Full Stack submission covering Tech Assessment #1 and Tech Assessment #2.
 
@@ -44,8 +44,8 @@ components/
 lib/
   supabase-admin.ts       # Server-side Supabase client
   types.ts                # Shared TypeScript types
-  weather-icons.ts        # Weather icon URL helper
-  weather.ts              # WeatherAPI.com API wrapper
+  weather-icons.ts        # OpenWeather icon URL helper
+  weather.ts              # OpenWeatherMap API wrapper
 supabase/
   schema.sql              # Database table, index, trigger, RLS policy
 ```
@@ -63,7 +63,7 @@ npm install
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-WEATHERAPI_API_KEY=your-weatherapi-key
+OPENWEATHER_API_KEY=your-openweathermap-api-key
 ```
 
 3. Run the SQL in `supabase/schema.sql` in the Supabase SQL editor.
@@ -80,12 +80,12 @@ On Windows PowerShell, use `npm.cmd run dev` if script execution policy blocks `
 
 ## Architecture
 
-The browser never calls WeatherAPI.com or Supabase directly. The React UI calls local Next.js API Routes. Those routes validate input, call WeatherAPI.com from the server, and use the Supabase service role key to persist or mutate records.
+The browser never calls OpenWeatherMap or Supabase directly. The React UI calls local Next.js API Routes. Those routes validate input, call OpenWeatherMap from the server, and use the Supabase service role key to persist or mutate records.
 
 `/api/weather` is the main workflow endpoint: it receives a search payload, fetches current weather and forecast, normalizes the response for the UI, then inserts the complete weather JSON into `weather_queries`.
 
 `/api/history` and `/api/history/[id]` expose CRUD operations for saved query records. The frontend history panel uses those endpoints to refresh, view, rename, and delete records.
 
-Date range searches are validated on the server and filtered against WeatherAPI.com's 5 day forecast data. Location existence is validated by WeatherAPI.com responses; unknown cities or invalid postal codes return a user-facing error.
+Date range searches are validated on the server and filtered against OpenWeatherMap's free 5 day forecast data. Location existence is validated by OpenWeatherMap responses; unknown cities or invalid postal codes return a user-facing error.
 
 `/api/history/export` reads saved records from Supabase and streams a CSV file for assessment export requirements.
