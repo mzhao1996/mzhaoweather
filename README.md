@@ -58,7 +58,7 @@ supabase/
 npm install
 ```
 
-2. Copy `.env.example` to `.env.local` and fill in values.
+2. update .env
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
