@@ -18,6 +18,7 @@ export function WeatherSearch({
   onSubmit,
   onUseCurrentLocation
 }: WeatherSearchProps) {
+  //just a form, user will fill it and submit it
   function updateField(field: keyof WeatherSearchInput, fieldValue: string) {
     onChange({ ...value, [field]: fieldValue });
   }

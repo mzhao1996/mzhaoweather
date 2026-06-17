@@ -9,6 +9,7 @@ type WeatherDisplayProps = {
 };
 
 export function WeatherDisplay({ weather }: WeatherDisplayProps) {
+  //just use to display the weather
   if (!weather) {
     return (
       <section className="panel">

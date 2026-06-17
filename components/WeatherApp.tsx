@@ -33,6 +33,7 @@ export function WeatherApp() {
     setError("");
 
     try {
+      //get all weather search history records from supabase
       const response = await fetch("/api/history", { cache: "no-store" });
       const body = (await response.json()) as { records?: WeatherHistoryRecord[] } & ApiError;
 
@@ -57,6 +58,7 @@ export function WeatherApp() {
     setError("");
 
     try {
+      //pass the search paras to weather, weather will go fetch weather from openweather and store the log in supabase
       const response = await fetch("/api/weather", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,7 +69,7 @@ export function WeatherApp() {
       if (!response.ok) {
         throw new Error(body.error ?? "Failed to fetch weather.");
       }
-
+      // once get the weather, set the weather as the payload of the weatherDisplay
       setWeather(body.weather);
       await loadHistory();
     } catch (caught) {
