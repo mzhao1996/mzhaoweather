@@ -128,11 +128,21 @@ export function WeatherApp() {
         <div>
           <span>Full Stack Assessment</span>
           <strong>Candidate: Meng Zhao</strong>
+          <a href="https://github.com/mzhao1996/mzhaoweather" target="_blank" rel="noopener noreferrer">
+            GitHub Profile
+          </a>
+          <a href="https://www.linkedin.com/in/meng-zhao-a95ba0169" target="_blank" rel="noopener noreferrer">
+            LinkedIn Profile
+          </a>
+          <p>
+            please contact me if you have any questions about the assessment, I will be happy to answer your questions.
+            if you needs my contact information, please reach out to me via LinkedIn
+          </p>
         </div>
         <p>
-          Product Manager Accelerator supports aspiring and current product managers through
-          coaching, community, and practical career resources for building product leadership
-          skills.
+          PMA description:
+          The Product Manager Accelerator Program is designed to support PM professionals through every stage of their careers. From students looking for entry-level jobs to Directors looking to take on a leadership role, our program has helped over hundreds of students fulfill their career aspirations.
+          Our Product Manager Accelerator community are ambitious and committed. Through our program they have learnt, honed and developed new PM and leadership skills, giving them a strong foundation for their future endeavors.
         </p>
       </section>
 
