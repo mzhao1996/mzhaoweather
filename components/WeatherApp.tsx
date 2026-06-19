@@ -131,6 +131,7 @@ export function WeatherApp() {
           <a href="https://github.com/mzhao1996/mzhaoweather" target="_blank" rel="noopener noreferrer">
             GitHub Profile
           </a>
+          <br/>
           <a href="https://www.linkedin.com/in/meng-zhao-a95ba0169" target="_blank" rel="noopener noreferrer">
             LinkedIn Profile
           </a>
