@@ -141,9 +141,8 @@ export function WeatherApp() {
           </p>
         </div>
         <p>
-          PMA description:
-          The Product Manager Accelerator Program is designed to support PM professionals through every stage of their careers. From students looking for entry-level jobs to Directors looking to take on a leadership role, our program has helped over hundreds of students fulfill their career aspirations.
-          Our Product Manager Accelerator community are ambitious and committed. Through our program they have learnt, honed and developed new PM and leadership skills, giving them a strong foundation for their future endeavors.
+          你需要一个网站吗？我来帮你做，这个项目用于展示我的能力，如你所见，这个项目有前后端，有数据库，连着天气API，部署在vercel。不用担心价格，我很便宜。
+          Do you need a website? I can help you build one. This project is designed to showcase my skills. As you can see, it includes both a front end and a back end, a database, and integration with a weather API. It is also deployed on Vercel. Don’t worry about the price, I am Cheap.
         </p>
       </section>
 

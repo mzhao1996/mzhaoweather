@@ -9,7 +9,7 @@ type WeatherDisplayProps = {
 };
 
 export function WeatherDisplay({ weather }: WeatherDisplayProps) {
-  //just use to display the weather
+  //just use to display the weather, get the weather data from props
   if (!weather) {
     return (
       <section className="panel">
