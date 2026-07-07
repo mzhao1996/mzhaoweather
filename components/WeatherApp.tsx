@@ -126,8 +126,8 @@ export function WeatherApp() {
 
       <section className="info-band" aria-label="Assessment information">
         <div>
-          <span>Full Stack Assessment</span>
-          <strong>Candidate: Meng Zhao</strong>
+          <span>Full Stack</span>
+          <strong>Meng Zhao</strong>
           <a href="https://github.com/mzhao1996/mzhaoweather" target="_blank" rel="noopener noreferrer">
             GitHub Profile
           </a>
